@@ -7,7 +7,7 @@
     </xs:schema>
   </wsdl:types>
   <wsdl:service name="ImagingService">
-    <wsdl:port name="ImagingPort" binding="timg:ImagingBinding">
+    <wsdl:port name="Imaging" binding="timg:ImagingBinding">
       <soap:address location="http://localhost:8000/onvif/imaging_service"/>
     </wsdl:port>
   </wsdl:service>
