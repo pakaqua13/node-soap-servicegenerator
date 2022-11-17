@@ -11,40 +11,50 @@ fs.mkdir(outputpath, {
   if (err) throw err;
 })
 
+
 var srv_wsdl = [{
-    wsdl: inputpath + "/srv_ptz.wsdl",
-    output: outputpath + "/ptz_service.js",
+    srv: 'ptz',
+    /*wsdl: inputpath + "/srv_ptz.wsdl",
+    output: outputpath + "/ptz_service.js",*/
     ignoredTypes: "[NetworkZeroConfigurationExtension,Transport]"
   },
   {
+    srv: 'device',
+    /*
     wsdl: inputpath + "/srv_device.wsdl",
-    output: outputpath + "/device_service.js",
+    output: outputpath + "/device_service.js",*/
     ignoredTypes: "[NetworkZeroConfigurationExtension,Transport]"
   },
   {
+    srv: 'events',
+    /*
     wsdl: inputpath + "/srv_events.wsdl",
-    output: outputpath + "/events_service.js",
+    output: outputpath + "/events_service.js",*/
     ignoredTypes: "[NetworkZeroConfigurationExtension,Transport]"
   },
   {
+    srv: 'imaging',
+    /*
     wsdl: inputpath + "/srv_imaging.wsdl",
-    output: outputpath + "/imaging_service.js",
+    output: outputpath + "/imaging_service.js",*/
     ignoredTypes: "[NetworkZeroConfigurationExtension,Transport]"
   },
   {
+    srv: 'media',
+    /*
     wsdl: inputpath + "/srv_media.wsdl",
-    output: outputpath + "/media_service.js",
+    output: outputpath + "/media_service.js",*/
     ignoredTypes: "[NetworkZeroConfigurationExtension,Transport]"
   }
 ];
 
-srv_wsdl.forEach((element) => {
+srv_wsdl.forEach((service) => {
 
 
   var options = {
-    wsdl: element.wsdl,
-    output: element.output,
-    ignoredTypes: element.ignoredTypes,
+    wsdl: inputpath + "/srv_" + service.srv + ".wsdl",
+    output: outputpath + "/" + service.srv + "_service.js",
+    ignoredTypes: service.ignoredTypes,
     tab: "\t",
     lineEnd: "\n",
     maxdepth: "25",
@@ -106,10 +116,21 @@ srv_wsdl.forEach((element) => {
       "var exports = module.exports = {};", lineEnd, lineEnd
     ].join('');
 
-    console.log(Object.keys(WSDL.definitions.messages), Object.keys(WSDL.definitions.messages).length, "wsdl loaded");
+
+    //console.log(Object.keys(WSDL.definitions.messages), Object.keys(WSDL.definitions.messages).length, "wsdl loaded");
     for (var serviceName in WSDL.services) {
       console.log(serviceName)
-      code += generateService(serviceName, WSDL.services[serviceName], tab);
+      var version = WSDL.definitions.schemas[
+        Object.keys(WSDL.definitions.schemas).filter((schIdx) => {
+          if (schIdx.includes(service.srv)) {
+            //console.log(service.srv, WSDL.definitions.schemas[schIdx])
+            return true;
+          } else {
+            return false;
+          }
+
+        })]['$version']
+      code += generateService(serviceName, WSDL.services[serviceName], tab, version);
     }
     console.log("Writing to : %s", outputPath);
     fs.writeFile(outputPath, code, function(err) {
@@ -117,7 +138,7 @@ srv_wsdl.forEach((element) => {
         console.log(err);
         process.exit(1);
       }
-      console.log(element.output + ' Done!');
+      console.log(service.srv + ' Done!');
       /*var stdin = process.openStdin();
       stdin.setRawMode(true);
       stdin.resume();
@@ -127,7 +148,7 @@ srv_wsdl.forEach((element) => {
     });
   });
 
-  var generateService = function(name, service, indent) {
+  var generateService = function(name, service, indent, version) {
     var code = "";
     console.log("Generating %s", name);
     for (var portName in service.ports) {
@@ -137,11 +158,12 @@ srv_wsdl.forEach((element) => {
 
 
     return util.format(["exports.%s = {", lineEnd,
+      indent, "Version : \"%s\",", lineEnd,
       indent, "%s : {", lineEnd,
       "%s",
       indent, "}", lineEnd,
       "}", lineEnd
-    ].join(''), name, name, code);
+    ].join(''), name, version, name, code);
   }
 
   var generatePort = function(name, port, indent) {
